@@ -1,0 +1,13 @@
+runtime: python311
+service: default
+
+env_variables:
+  API_TOKEN: "test-api-token-sentinelone"
+  DEBUG: "False"
+
+automatic_scaling:
+  min_instances: 0
+  max_instances: 2
+  target_cpu_utilization: 0.65
+
+entrypoint: gunicorn -b 0.0.0.0:8080 -w 4 --timeout 120 app:app

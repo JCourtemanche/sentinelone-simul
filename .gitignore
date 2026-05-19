@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.env
+.venv
+venv/
+env/
+*.log
+
+# Extracted content pack (not needed in repo)
+extracted/
+
+# ZIP files (large, not needed in repo)
+*.zip
+
+# PDF specs (large binary)
+*.pdf
+
+# IDE
+.vscode/
+.idea/
+*.swp
