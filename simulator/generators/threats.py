@@ -1,8 +1,9 @@
 import random
 from generators.base import (
     s1_id, s1_uuid, s1_timestamp, sha1, sha256, md5,
-    fake, OS_TYPES, SITE_NAMES,
+    fake, OS_TYPES, SITE_NAMES, malicious_ip,
 )
+from xsiam_shared import USERS, MALICIOUS_FILES, COMPANY_NAME
 from config import Config
 
 THREAT_NAMES = [
@@ -26,18 +27,19 @@ INCIDENT_STATUSES = ['unresolved', 'in_progress', 'resolved']
 
 
 def generate_threat(threat_id=None):
-    os_type = random.choice(OS_TYPES)
+    persona = random.choice(USERS)
+    os_type = persona["os_type"]
     _site_id = random.choice(Config.SITE_IDS)
     agent_id = s1_id()
+    mal_file = random.choice(MALICIOUS_FILES)
 
     file_path = random.choice([
-        'C:\\Users\\{}\\AppData\\Local\\Temp\\'.format(fake.user_name()),
+        'C:\\Users\\{}\\AppData\\Local\\Temp\\'.format(persona["username"]),
         'C:\\Windows\\Temp\\',
         '/tmp/',
         '/var/tmp/',
-        '/home/{}/Downloads/'.format(fake.user_name()),
+        '/home/{}/Downloads/'.format(persona["username"]),
     ])
-    file_name = fake.file_name(extension=random.choice(['exe', 'dll', 'ps1', 'sh', 'py']))
 
     return {
         'id': threat_id or s1_id(),
@@ -49,12 +51,12 @@ def generate_threat(threat_id=None):
             'mitigationStatus': random.choice(MITIGATION_STATUSES),
             'confidenceLevel': random.choice(CONFIDENCE_LEVELS),
             'sha1': sha1(),
-            'sha256': sha256(),
+            'sha256': mal_file["hash"],
             'md5': md5(),
             'threatName': random.choice(THREAT_NAMES),
-            'filePath': file_path + file_name,
-            'fileDisplayName': file_name,
-            'processUser': fake.user_name(),
+            'filePath': file_path + mal_file["name"],
+            'fileDisplayName': mal_file["name"],
+            'processUser': persona["username"],
             'analystVerdict': random.choice(ANALYST_VERDICTS),
             'incidentStatus': random.choice(INCIDENT_STATUSES),
             'initiatedBy': random.choice(['agent_policy', 'user', 'cloud']),
@@ -65,7 +67,7 @@ def generate_threat(threat_id=None):
         },
         'agentRealtimeInfo': {
             'agentId': agent_id,
-            'agentComputerName': 'DESKTOP-' + fake.lexify('????????').upper(),
+            'agentComputerName': persona["hostname"],
             'siteId': _site_id,
             'siteName': random.choice(SITE_NAMES),
             'agentOsType': os_type,
@@ -76,7 +78,7 @@ def generate_threat(threat_id=None):
             'groupId': random.choice(Config.GROUP_IDS),
             'groupName': random.choice(['Workstations', 'Servers', 'Laptops']),
             'accountId': Config.ACCOUNT_IDS[0],
-            'accountName': 'Acme Corp',
+            'accountName': COMPANY_NAME,
         },
         'containerInfo': None,
         'kubernetesInfo': None,
@@ -150,7 +152,7 @@ def generate_threat_analysis(threat_id):
             'network': {
                 'connections': [
                     {
-                        'remoteAddress': fake.ipv4_public(),
+                        'remoteAddress': malicious_ip(),
                         'remotePort': random.choice([80, 443, 8080, 4444]),
                         'protocol': 'TCP',
                     }

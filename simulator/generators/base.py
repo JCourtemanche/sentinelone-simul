@@ -3,6 +3,7 @@ import random
 import hashlib
 from datetime import datetime, timedelta
 from faker import Faker
+from xsiam_shared import USERS, INTERNAL_IPS, MALICIOUS_IPS, DOMAIN, COMPANY_NAME
 
 fake = Faker()
 
@@ -39,7 +40,13 @@ def public_ip():
 
 
 def private_ip():
-    return fake.ipv4_private()
+    """Return a Business Corp internal IP (192.168.1.x)."""
+    return random.choice(INTERNAL_IPS)
+
+
+def malicious_ip():
+    """Return one of the shared malicious IPs."""
+    return random.choice(MALICIOUS_IPS)
 
 
 def mac_address():
@@ -72,21 +79,12 @@ def random_count(min_val=None, max_val=None):
     return random.randint(lo, hi)
 
 
-COMPUTER_NAMES = [
-    'DESKTOP-{}'.format(fake.lexify('????????').upper()),
-    'LAPTOP-{}'.format(fake.lexify('??????').upper()),
-    'WS-{}'.format(fake.numerify('####')),
-    'SRV-{}'.format(fake.lexify('????').upper()),
-]
+# Persona-derived lists for use throughout generators
+COMPUTER_NAMES = [u["hostname"] for u in USERS]
+OS_NAMES = list({u["os_name"] for u in USERS})
+OS_TYPES = list({u["os_type"] for u in USERS})
 
-OS_NAMES = [
-    'Windows 10 Pro', 'Windows 11 Pro', 'Windows Server 2019',
-    'macOS 14.0', 'macOS 13.5', 'Ubuntu 22.04 LTS', 'CentOS 7',
-]
-
-OS_TYPES = ['windows', 'macos', 'linux']
-
-DOMAINS = ['corp.example.com', 'internal.acme.net', 'enterprise.local', 'lab.test']
+DOMAINS = [DOMAIN, f'corp.{DOMAIN}', f'internal.{DOMAIN}']
 
 SITE_NAMES = ['HQ', 'Branch-Paris', 'Branch-London', 'DataCenter-EU', 'Cloud-Prod']
 

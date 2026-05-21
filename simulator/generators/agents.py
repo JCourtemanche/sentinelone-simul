@@ -3,22 +3,30 @@ from generators.base import (
     s1_id, s1_uuid, s1_timestamp, sha256, public_ip, private_ip, mac_address,
     fake, OS_NAMES, OS_TYPES, DOMAINS, SITE_NAMES, GROUP_NAMES,
 )
+from xsiam_shared import USERS, COMPANY_NAME, DOMAIN
 from config import Config
 
 
-def generate_agent(agent_id=None, site_id=None, group_id=None, account_id=None):
-    os_type = random.choice(OS_TYPES)
-    os_name = random.choice([n for n in OS_NAMES if os_type in n.lower()] or OS_NAMES)
+def generate_agent(agent_id=None, site_id=None, group_id=None, account_id=None, persona=None):
+    """
+    Generate a SentinelOne agent record.
+
+    If `persona` is given (a dict from xsiam_shared.USERS), the agent uses
+    that persona's hostname, OS, and internal IP.  Otherwise a random persona
+    is picked from the shared list so every agent maps to a known Business Corp user.
+    """
+    p = persona or random.choice(USERS)
+    os_type = p["os_type"]
+    os_name = p["os_name"]
+
     _site_id = site_id or random.choice(Config.SITE_IDS)
     _group_id = group_id or random.choice(Config.GROUP_IDS)
     _account_id = account_id or Config.ACCOUNT_IDS[0]
 
-    computer_name = 'DESKTOP-' + fake.lexify('????????').upper() if os_type == 'windows' else fake.hostname()
-
     return {
         'id': agent_id or s1_id(),
         'uuid': s1_uuid(),
-        'computerName': computer_name,
+        'computerName': p["hostname"],
         'osName': os_name,
         'osType': os_type,
         'osRevision': fake.numerify('##H#'),
@@ -31,17 +39,17 @@ def generate_agent(agent_id=None, site_id=None, group_id=None, account_id=None):
         'createdAt': s1_timestamp(days_back=365),
         'updatedAt': s1_timestamp(days_back=30),
         'externalIp': public_ip(),
-        'localIp': private_ip(),
+        'localIp': p["internal_ip"],
         'activeThreats': random.randint(0, 5),
         'encryptedApplications': random.choice([True, False]),
-        'machineType': random.choice(['laptop', 'desktop', 'server', 'kubernetes node']),
-        'domain': random.choice(DOMAINS),
+        'machineType': p["machine_type"],
+        'domain': DOMAIN,
         'siteId': _site_id,
         'siteName': random.choice(SITE_NAMES),
         'groupId': _group_id,
         'groupName': random.choice(GROUP_NAMES),
         'accountId': _account_id,
-        'accountName': 'Acme Corp',
+        'accountName': COMPANY_NAME,
         'totalMemory': random.choice([4096, 8192, 16384, 32768]),
         'cpuId': random.choice(['Intel Core i7-10700', 'Intel Xeon E5-2680', 'AMD Ryzen 7 5800X']),
         'modelName': random.choice(['Dell OptiPlex 7090', 'HP EliteBook 840', 'Lenovo ThinkPad X1']),
@@ -53,7 +61,7 @@ def generate_agent(agent_id=None, site_id=None, group_id=None, account_id=None):
             {
                 'id': s1_id(),
                 'name': random.choice(['eth0', 'en0', 'Ethernet']),
-                'inet': [private_ip()],
+                'inet': [p["internal_ip"]],
                 'inet6': [],
                 'physical': mac_address(),
             }
@@ -63,13 +71,14 @@ def generate_agent(agent_id=None, site_id=None, group_id=None, account_id=None):
 
 
 def generate_agent_process(agent_id):
+    persona = random.choice(USERS)
     return {
         'pid': random.randint(1000, 65535),
         'processName': random.choice([
             'chrome.exe', 'svchost.exe', 'explorer.exe', 'python.exe',
             'node.exe', 'outlook.exe', 'teams.exe', 'powershell.exe',
         ]),
-        'user': fake.user_name(),
+        'user': persona["username"],
         'startTime': s1_timestamp(days_back=1),
         'cpuUsage': round(random.uniform(0, 50), 2),
         'memoryUsage': random.randint(10, 500),
